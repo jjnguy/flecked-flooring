@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <style>
+    canvas {
+      outline: 1px solid;
+    }
+  </style>
+</head>
+
+<body>
+  <canvas id="canvas" width="1000" height="700">todo</canvas>
+
+  <script>
+    var canvas = document.getElementById("canvas");
+    var ctx = canvas.getContext('2d');
+    function getShape(radMin, radMax) {
+      return {
+        type: 'circle',
+        radius: getRandomInt(radMin, radMax),
+        fillStyle: 'red',
+        position: { x: getRandomInt(0, canvas.width), y: getRandomInt(0, canvas.height) }
+      };
+    }
+
+    function drawShape(shape, ctx) {
+      if (shape.type == 'circle') {
+        ctx.beginPath();
+        ctx.fillStyle = shape.fillStyle;
+        ctx.arc(shape.position.x, shape.position.y, shape.radius, 0, Math.PI * 2, true);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.fillStyle = 'black';
+        ctx.arc(shape.position.x, shape.position.y, shape.radius, 0, Math.PI * 2, true);
+        ctx.stroke();
+      } else {
+        throw `Unknown type ${shape.type}`;
+      }
+
+    }
+
+    function distance(point1, point2) {
+      return Math.sqrt(Math.pow((point1.x - point2.x), 2) + Math.pow((point1.y - point2.y), 2));
+    }
+
+    function generateShapes(existingShapes, number, minSize, maxSize) {
+      if (number == 0) return [];
+      if (minSize <= 0) return [];
+      var result = [];
+      let misses = 0;
+      let placedShapes = 0;
+      while (misses < number * 10 && placedShapes < number) {
+        let potentialShape = getShape(minSize, maxSize);
+        let collisions = result.filter(existing => collides(existing, potentialShape)).concat(existingShapes.filter(existing => collides(existing, potentialShape)));
+        if (collisions.length == 0) {
+          result.push(potentialShape);
+          placedShapes++;
+        } else {
+          misses++;
+        }
+      }
+      console.log(`Shapes remaining ${number - placedShapes}`);
+      return result.concat(generateShapes(result.concat(existingShapes), number - placedShapes, minSize * .9, maxSize * .9));
+    }
+
+    function collides(shape1, shape2) {
+      let d = distance(shape1.position, shape2.position);
+      return d < shape1.radius + shape2.radius + 8;
+
+    }
+
+    function getRandomInt(min, max) {
+      return min + Math.floor(Math.random() * (max - min));
+    }
+
+    let shapes = generateShapes([], 350, 15, 50);
+    shapes.forEach(shape => {
+      drawShape(shape, ctx);
+    });
+  </script>
+</body>
+
+</html>
