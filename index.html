@@ -61,7 +61,6 @@
           misses++;
         }
       }
-      console.log(`Shapes remaining ${number - placedShapes}`);
       return result.concat(generateShapes(result.concat(existingShapes), number - placedShapes, minSize * .9, maxSize * .9));
     }
 
