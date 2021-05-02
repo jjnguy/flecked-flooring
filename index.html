@@ -30,7 +30,7 @@
       const colorOptions = ["#d2691e", '#deb887', 'black', '#556b2f', '#a9a9a9'];
 
 
-      let numPoints = getRandomInt(4, 7);
+      let numPoints = getRandomInt(4, 5);
       let paths = [];
       for (let i = 0; i < numPoints; i++) {
         paths.push({
@@ -38,12 +38,30 @@
           y: getRandomInt(-radMax, radMax),
         });
       }
+      paths = paths.sortf(item => {
+        return Math.atan2(item.y, item.x) * 180 / Math.PI;
+      });
+      let position = { x: getRandomInt(0, canvas.width), y: getRandomInt(0, canvas.height) };
+      let sides = [];
+      for (let i = 0; i < paths.length; i++) {
+        sides.push([
+          {
+            x: paths[i].x + position.x,
+            y: paths[i].y + position.y
+          },
+          {
+            x: paths[(i + 1) % paths.length].x + position.x,
+            y: paths[(i + 1) % paths.length].y + position.y
+          },
+        ]);
+      }
       return {
         type: 'polygon',
         paths: paths,
         radius: (radMax + radMin) / 2,
         fillStyle: colorOptions[getRandomInt(0, colorOptions.length)],
-        position: { x: getRandomInt(0, canvas.width), y: getRandomInt(0, canvas.height) }
+        position: position,
+        sides: sides,
       };
 
       return {
@@ -66,13 +84,10 @@
         ctx.stroke();
       } else if (shape.type == "polygon") {
         // sorting by angle from centerpoint inspired by - https://observablehq.com/@tarte0/generate-random-simple-polygon#sortedPoints
-        let sortedPoints = shape.paths.sortf(item => {
-          return Math.atan2(item.y, item.x) * 180 / Math.PI;
-        });
         ctx.beginPath();
         ctx.fillStyle = shape.fillStyle;
-        ctx.moveTo(sortedPoints[0].x + shape.position.x, sortedPoints[0].y + shape.position.y);
-        sortedPoints.forEach(path => {
+        ctx.moveTo(shape.paths[0].x + shape.position.x, shape.paths[0].y + shape.position.y);
+        shape.paths.forEach(path => {
           ctx.lineTo(shape.position.x + path.x, shape.position.y + path.y);
         });
         ctx.fill();
@@ -106,16 +121,48 @@
     }
 
     function collides(shape1, shape2) {
-      let d = distance(shape1.position, shape2.position);
-      return d < shape1.radius + shape2.radius + 8;
+      if (shape1.type != shape2.type) {
+        throw `Cannot check collision between different shapes.`
+      }
 
+      if (shape1.type == "circle") {
+        let d = distance(shape1.position, shape2.position);
+        return d < shape1.radius + shape2.radius + 8;
+      } else if (shape1.type == "polygon") {
+        // https://gist.github.com/Code-Break0/229e23e687abbccca7611816f91d6e8b
+        function intersect(s1, s2) {
+          if (((s2[1].x - s2[0].x) * (s1[0].y - s1[1].y) - (s1[0].x - s1[1].x) * (s2[1].y - s2[0].y)) === 0) {
+            return 'collinear';
+          }
+          let tA = ((s2[0].y - s2[1].y) * (s1[0].x - s2[0].x) + (s2[1].x - s2[0].x) * (s1[0].y - s2[0].y)) /
+            ((s2[1].x - s2[0].x) * (s1[0].y - s1[1].y) - (s1[0].x - s1[1].x) * (s2[1].y - s2[0].y));
+          let tB = ((s1[0].y - s1[1].y) * (s1[0].x - s2[0].x) + (s1[1].x - s1[0].x) * (s1[0].y - s2[0].y)) /
+            ((s2[1].x - s2[0].x) * (s1[0].y - s1[1].y) - (s1[0].x - s1[1].x) * (s2[1].y - s2[0].y));
+          return [tA, tB];
+        }
+
+        for (var i = 0; i < shape1.sides.length; i++) {
+          for (var j = 0; j < shape2.sides.length; j++) {
+            var t = intersect(shape1.sides[i], shape2.sides[j]);
+            if (t === 'collinear') { continue; }
+            if (t[0] <= 1 && t[0] >= 0 && t[1] <= 1 && t[1] >= 0) {
+              return true;
+            }
+          }
+        }
+        return false;
+
+
+      } else {
+        throw `Unknown type ${shape1.type}`;
+      }
     }
 
     function getRandomInt(min, max) {
       return min + Math.floor(Math.random() * (max - min));
     }
 
-    let shapes = generateShapes([], 240, 20, 40);
+    let shapes = generateShapes([], 100, 60, 80);
     ctx.fillStyle = 'lightgray';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     shapes.forEach(shape => {
