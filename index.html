@@ -29,14 +29,12 @@
     function getShape(radMin, radMax) {
       const colorOptions = ["#d2691e", '#deb887', 'black', '#556b2f', '#a9a9a9'];
 
-      /*
       return {
         type: 'circle',
         radius: getRandomInt(radMin, radMax),
         fillStyle: colorOptions[getRandomInt(0, colorOptions.length)],
         position: { x: getRandomInt(0, canvas.width), y: getRandomInt(0, canvas.height) }
       };
-      */
 
       let numPoints = getRandomInt(4, 5);
       let paths = [];
