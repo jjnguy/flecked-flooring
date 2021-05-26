@@ -29,6 +29,14 @@
     function getShape(radMin, radMax) {
       const colorOptions = ["#d2691e", '#deb887', 'black', '#556b2f', '#a9a9a9'];
 
+      /*
+      return {
+        type: 'circle',
+        radius: getRandomInt(radMin, radMax),
+        fillStyle: colorOptions[getRandomInt(0, colorOptions.length)],
+        position: { x: getRandomInt(0, canvas.width), y: getRandomInt(0, canvas.height) }
+      };
+      */
 
       let numPoints = getRandomInt(4, 5);
       let paths = [];
@@ -64,12 +72,7 @@
         sides: sides,
       };
 
-      return {
-        type: 'circle',
-        radius: getRandomInt(radMin, radMax),
-        fillStyle: colorOptions[getRandomInt(0, colorOptions.length)],
-        position: { x: getRandomInt(0, canvas.width), y: getRandomInt(0, canvas.height) }
-      };
+
     }
 
     function drawShape(shape, ctx) {
@@ -150,6 +153,16 @@
             }
           }
         }
+
+        // now check to make sure the polygon is not inside the other
+        // TODO: this is busted
+        let size1 = shape1.paths.reduce((result, next) => Math.abs(next.x) + Math.abs(next.y) + result, 0) / (shape1.paths.length * 2);
+        let size2 = shape2.paths.reduce((result, next) => Math.abs(next.x) + Math.abs(next.y) + result, 0) / (shape2.paths.length * 2);
+        let d = distance(shape1.position, shape2.position);
+        if (d < Math.min(size2, size1) / 2) {
+          return true;
+        }
+
         return false;
 
 
